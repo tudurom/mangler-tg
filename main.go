@@ -43,6 +43,8 @@ func printError(reason string, err error) {
 var conf Config
 var bot *tgbotapi.BotAPI
 
+const kodoUsername = "oolax"
+
 func mangle(str string) (ret string) {
 	ret = ""
 	for _, word := range strings.Split(str, " ") {
@@ -86,7 +88,6 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 	printError("Coudln't get telegram bot updates", err)
 
-	results := make([]interface{}, 1)
 	for update := range updates {
 		if update.InlineQuery != nil {
 			toMangle := update.InlineQuery.Query
@@ -97,17 +98,26 @@ func main() {
 				}
 				continue
 			}
+			results := make([]interface{}, 1)
 			doc := tgbotapi.NewInlineQueryResultArticle(time.Now().Format("mangle_%s"), "Mangled text", mangled)
 			doc.Description = mangled
 			results[0] = doc
+			if update.InlineQuery.From.UserName == kodoUsername {
+				surp := tgbotapi.NewInlineQueryResultArticle(time.Now().Format("mangler_easter_egg_%s"), "Mangled text", mangled)
+				surp.Description = "Ooo salut cf boss felicitari pentru bilingv!"
+				results = append(results, surp)
+			}
 			ic := tgbotapi.InlineConfig{}
 			ic.InlineQueryID = update.InlineQuery.ID
 			ic.Results = results
-			ic.IsPersonal = false
+			ic.IsPersonal = true
 			ic.CacheTime = 0
+			if ic.Results == nil || ic.Results[0] == nil {
+				continue
+			}
 			_, err = bot.AnswerInlineQuery(ic)
 			if err != nil {
-				log.Printf("Couldn't answer to inline query: %v\n", err)
+				log.Printf("Couldn't answer to inline query: %v (%v)\n", err, ic)
 			}
 		}
 	}
