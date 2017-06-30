@@ -1,16 +1,19 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"math/rand"
+	"math/big"
 	"strings"
 	"time"
 	"unicode"
 
 	"gopkg.in/telegram-bot-api.v4"
 )
+
+var two = big.NewInt(2)
 
 // Config holds configuration variables essentials to the execution of the program.
 type Config struct {
@@ -56,7 +59,11 @@ func mangle(str string) (ret string) {
 		// the word without the last character
 		ws := string(rw[0:(len(rw) - 1)])
 		for i := 0; i < len(rw); i++ {
-			rnd := rand.Int() % 2
+			rr, err := rand.Int(rand.Reader, two)
+			rnd := rr.Uint64()
+			if err != nil {
+				return "error: " + err.Error()
+			}
 			r := string(rw[i])
 			if rnd == 1 ||
 				(i == len(rw)-1 && (ws == newword)) {
